@@ -8,9 +8,12 @@ import {
   ClipboardCheck, AlertCircle, Check, Droplet, Snowflake, Box, ExternalLink
 } from 'lucide-react';
 
-/* LOGO URL */
-// Usamos ruta relativa "./" para compatibilidad con GitHub Pages
-const LOGO_URL = "./cargofreshlogo.svg"; 
+/* LOGO URL CORREGIDO
+   Usamos una ruta relativa simple "./cargofreshlogo.svg".
+   Asegúrate de que el archivo "cargofreshlogo.svg" esté en la carpeta "public" de tu proyecto.
+   Al construir para producción, Vite resolverá esto correctamente relativo a la base.
+*/
+const LOGO_URL = "./cargofreshlogo.svg";
 
 /* ⚡ CONFIGURACIÓN DE TARIFAS */
 const TARIFF_RATES = {
@@ -52,7 +55,7 @@ const generateGeminiContent = async (prompt) => {
 };
 
 /* ------------------------------------------------
-  COMPONENTE CARGOBOT
+  COMPONENTE CARGOBOT (AISLADO)
   ------------------------------------------------
 */
 const CargoBot = memo(() => {
@@ -245,8 +248,9 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 bg-blue-900 text-white overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image with Multiply Effect */}
         <div className="absolute inset-0 z-0">
+           {/* Ruta directa para evitar problemas en deploy, si img_cargo_slide.jpg está en public */}
            <img 
              src="./img_cargo_slide.jpg"
              alt="Buque de carga"
