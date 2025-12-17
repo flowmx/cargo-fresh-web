@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 
 /* LOGO URL */
-const LOGO_URL = "/cargofreshlogo.svg"; 
+// Usamos ruta relativa "./" para compatibilidad con GitHub Pages
+const LOGO_URL = "./cargofreshlogo.svg"; 
 
 /* ⚡ CONFIGURACIÓN DE TARIFAS */
 const TARIFF_RATES = {
@@ -51,7 +52,7 @@ const generateGeminiContent = async (prompt) => {
 };
 
 /* ------------------------------------------------
-  COMPONENTE CARGOBOT (AISLADO)
+  COMPONENTE CARGOBOT
   ------------------------------------------------
 */
 const CargoBot = memo(() => {
@@ -173,7 +174,7 @@ const ContactForm = () => {
 };
 
 /* ==============================================
-   COMPONENTES DE VISTA (EXTRAÍDOS PARA EVITAR RE-RENDERS)
+   COMPONENTES DE VISTA
 ================================================ */
 
 const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEstimate, handleBuyNow, estimatedPrice }) => {
@@ -244,9 +245,10 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 bg-blue-900 text-white overflow-hidden">
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
            <img 
-             src="img_cargo_slide.jpg"
+             src="./img_cargo_slide.jpg"
              alt="Buque de carga"
              className="w-full h-full object-cover opacity-50 mix-blend-multiply absolute inset-0"
            />
@@ -278,7 +280,6 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
             </div>
           </div>
           
-          {/* Feature Cards */}
           <div className="hidden lg:grid grid-cols-2 gap-6">
              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 hover:bg-white/20 transition duration-300 h-40 flex flex-col justify-center">
                 <Thermometer className="w-8 h-8 text-cyan-300 mb-2" />
@@ -319,11 +320,11 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
               </p>
             </div>
             
-            <div className="relative h-96 flex items-center justify-center"> 
+            <div className="flex items-center justify-center p-4"> 
               <img 
-                src="img_cargo_fresh_truck.png" 
+                src="./img_cargo_fresh_truck.png" 
                 alt="Camión Cargo Fresh" 
-                className="w-full h-full object-contain drop-shadow-2xl" 
+                className="w-full max-w-md object-contain" 
               />
             </div>
           </div>
@@ -378,7 +379,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
 
       {/* Tipos de Carga */}
       <section id="servicios" className="py-24 relative overflow-hidden bg-gray-900 text-white">
-        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-multiply" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1595155152862-2374e2a142c9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')" }}></div>
+        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-multiply" style={{ backgroundImage: "url('./img_cargo_slide.jpg')" }}></div>
         <div className="absolute inset-0 bg-blue-950/80 z-0"></div>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
@@ -389,7 +390,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
             {/* Carga Fresca */}
             <div className="bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl border border-white/10 hover:bg-white/20 transition duration-300 h-full flex flex-col">
               <div className="h-48 overflow-hidden relative">
-                <img src="carga_fresca_verduras.jpg" alt="Frutas y Verduras" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
+                <img src="./carga_fresca_verduras.jpg" alt="Frutas y Verduras" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
               </div>
               <div className="p-8 flex-1 flex flex-col">
                 <div className="flex items-center mb-4">
@@ -407,7 +408,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
             {/* Carga Congelada */}
             <div className="bg-blue-600/90 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl border border-blue-500 hover:bg-blue-600 transition duration-300 h-full flex flex-col">
               <div className="h-48 overflow-hidden relative">
-                <img src="carga_congelada_carnes.jpg" alt="Congelados" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
+                <img src="./carga_congelada_carnes.jpg" alt="Congelados" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
               </div>
               <div className="p-8 flex-1 flex flex-col">
                 <div className="flex items-center mb-4">
@@ -425,7 +426,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
             {/* Carga Seca */}
             <div className="bg-orange-600/90 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl border border-orange-500 hover:bg-orange-600 transition duration-300 h-full flex flex-col">
               <div className="h-48 overflow-hidden relative">
-                <img src="carga_seca_abarrotes.jpg" alt="Carga Seca" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
+                <img src="./carga_seca_abarrotes.jpg" alt="Carga Seca" className="w-full h-full object-cover transform hover:scale-110 transition duration-500" />
               </div>
               <div className="p-8 flex-1 flex flex-col">
                 <div className="flex items-center mb-4">
