@@ -8,8 +8,8 @@ import {
   ClipboardCheck, AlertCircle, Check, Droplet, Snowflake, Box, ExternalLink
 } from 'lucide-react';
 
-/* LOGO URL (Placeholder con la imagen subida por el usuario) */
-const LOGO_URL = "cargofreshlogo.svg"; 
+/* LOGO URL */
+const LOGO_URL = "/cargofreshlogo.svg"; 
 
 /* ⚡ CONFIGURACIÓN DE TARIFAS */
 const TARIFF_RATES = {
@@ -51,7 +51,7 @@ const generateGeminiContent = async (prompt) => {
 };
 
 /* ------------------------------------------------
-  COMPONENTE CARGOBOT (AISLADO Y MEMORIZADO)
+  COMPONENTE CARGOBOT (AISLADO)
   ------------------------------------------------
 */
 const CargoBot = memo(() => {
@@ -134,11 +134,6 @@ const CargoBot = memo(() => {
   );
 });
 
-/* ------------------------------------------------
-  COMPONENTES DE VISTA (SEPARADOS PARA LIMPIEZA)
-  ------------------------------------------------
-*/
-
 const ContactForm = () => {
     const [status, setStatus] = useState("idle");
 
@@ -177,119 +172,17 @@ const ContactForm = () => {
     );
 };
 
-/* ------------------------------------------------
-  COMPONENTE APP PRINCIPAL
-  ------------------------------------------------
-*/
-const App = () => {
-  // --- STATE ---
-  const [currentView, setCurrentView] = useState('landing'); 
-  const [user, setUser] = useState(null);
+/* ==============================================
+   COMPONENTES DE VISTA (EXTRAÍDOS PARA EVITAR RE-RENDERS)
+================================================ */
+
+const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEstimate, handleBuyNow, estimatedPrice }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
-  const [pendingQuote, setPendingQuote] = useState(null);
-  
-  // AI Helper State
   const [freshnessProduct, setFreshnessProduct] = useState("");
   const [freshnessResult, setFreshnessResult] = useState(null);
   const [isFreshnessLoading, setIsFreshnessLoading] = useState(false);
 
-  // Quote Form State
-  const [formData, setFormData] = useState({
-    origin: "", destination: "", type: "", presentation: "",
-    weight: "", lastMile: false
-  });
-  const [estimatedPrice, setEstimatedPrice] = useState(null);
-
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // --- HANDLERS ---
-  const handleLogin = (role) => {
-    if (role === 'client') {
-      setUser({ name: "Cliente Demo S.A.", role: 'client' });
-      setCurrentView('client-dashboard');
-    } else {
-      setUser({ name: "Administrador CargoFresh", role: 'admin' });
-      setCurrentView('admin-dashboard');
-    }
-    scrollToTop();
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentView('landing');
-    setPendingQuote(null);
-    scrollToTop();
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    if (['type', 'origin', 'destination', 'lastMile', 'weight'].includes(name)) {
-      setEstimatedPrice(null);
-    }
-  };
-
-  const handleCreateOrder = () => {
-    const newOrder = {
-      id: `ORD-${Math.floor(Math.random() * 10000)}`,
-      client: user.name,
-      origin: pendingQuote ? pendingQuote.origin : formData.origin,
-      dest: pendingQuote ? pendingQuote.destination : formData.destination,
-      type: pendingQuote ? pendingQuote.type : formData.type,
-      weight: pendingQuote ? pendingQuote.weight : formData.weight,
-      price: pendingQuote ? pendingQuote.price : estimatedPrice?.min || 0,
-      status: "Pendiente de Autorización",
-      date: new Date().toISOString().split('T')[0]
-    };
-    setOrders([newOrder, ...orders]);
-    setPendingQuote(null);
-    alert("¡Pedido creado exitosamente!");
-  };
-
-  const handleAuthorizeOrder = (orderId) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: "Autorizado" } : order
-    ));
-  };
-
-  const calculateEstimate = (e) => {
-    e?.preventDefault();
-    if (!formData.weight || !formData.type) {
-      alert("Ingresa peso y tipo de carga.");
-      return;
-    }
-    const cleanWeight = formData.weight.toString().replace(',', '.');
-    const weight = parseFloat(cleanWeight);
-    
-    if (isNaN(weight) || weight <= 0) {
-        alert("Por favor ingresa un peso válido (mayor a 0).");
-        return;
-    }
-
-    let total = TARIFF_RATES.baseCost + (weight * TARIFF_RATES.perKg);
-    if (formData.type === 'Congelado') total *= TARIFF_RATES.frozenMultiplier;
-    if (formData.type === 'Fresco') total *= TARIFF_RATES.freshMultiplier;
-    if (formData.lastMile) total += TARIFF_RATES.lastMileCost;
-
-    const min = Math.round(total * 0.95);
-    const max = Math.round(total * 1.05);
-    const priceData = { min, max };
-    setEstimatedPrice(priceData);
-    return priceData;
-  };
-
-  const handleBuyNow = () => {
-    const price = calculateEstimate();
-    if (!price) return;
-    setPendingQuote({ ...formData, price: price.min });
-    setCurrentView('login');
-    scrollToTop();
-  };
 
   const handleFreshnessAnalysis = async () => {
     if (!freshnessProduct.trim()) return;
@@ -306,29 +199,39 @@ const App = () => {
     setIsFreshnessLoading(false);
   };
 
-  /* ==============================================
-     VISTA 1: LANDING PAGE
-  ================================================ */
-  const LandingView = () => (
+  return (
     <div className="min-h-screen bg-white text-gray-800 font-sans">
       {/* Navbar */}
       <nav className="sticky top-0 bg-white/95 backdrop-blur-sm shadow-sm z-40 border-b border-gray-100 transition-all">
         <div className="max-w-7xl mx-auto px-4 h-24 flex justify-between items-center">
-          <div className="flex flex-col cursor-pointer" onClick={() => scrollToTop()}>
-            <img src={LOGO_URL} alt="Cargo Fresh Logo" className="h-16 w-auto object-contain"/>
+          <div className="flex flex-col cursor-pointer" onClick={scrollToTop}>
+            <img 
+              src={LOGO_URL} 
+              alt="Cargo Fresh Logo" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
+          
           <div className="hidden lg:flex space-x-8 items-center text-sm font-bold text-gray-600">
             <a href="#nosotros" className="hover:text-orange-500 transition">NOSOTROS</a>
             <a href="#servicios" className="hover:text-blue-900 transition">SERVICIOS</a>
             <a href="#rutas" className="hover:text-blue-900 transition">RUTAS</a>
             <a href="#cotizador" className="hover:text-orange-500 transition text-blue-900">COTIZADOR</a>
             <a href="#contacto" className="hover:text-blue-900 transition">CONTACTO</a>
-            <button onClick={() => setCurrentView('login')} className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-full flex items-center transition-all shadow-md transform hover:-translate-y-0.5">
-              <User className="w-4 h-4 mr-2" /> Zona Clientes
+            <button 
+              onClick={() => setCurrentView('login')}
+              className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-full flex items-center transition-all shadow-md transform hover:-translate-y-0.5"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Zona Clientes
             </button>
           </div>
-          <button className="lg:hidden text-blue-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <X /> : <Menu />}</button>
+          
+          <button className="lg:hidden text-blue-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
+        
         {isMenuOpen && (
           <div className="lg:hidden bg-white border-t p-4 space-y-4 shadow-lg absolute w-full z-50">
             <a href="#nosotros" className="block text-gray-700 font-bold p-2" onClick={() => setIsMenuOpen(false)}>Nosotros</a>
@@ -342,21 +245,40 @@ const App = () => {
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 bg-blue-900 text-white overflow-hidden">
         <div className="absolute inset-0 z-0">
-           <img src="img_cargo_slide.jpg" alt="Buque de carga" className="w-full h-full object-cover opacity-50 mix-blend-multiply absolute inset-0"/>
+           <img 
+             src="img_cargo_slide.jpg"
+             alt="Buque de carga"
+             className="w-full h-full object-cover opacity-50 mix-blend-multiply absolute inset-0"
+           />
            <div className="absolute inset-0 bg-blue-900 mix-blend-multiply opacity-90"></div>
         </div>
+        
         <div className="max-w-7xl mx-auto px-4 relative z-20 grid lg:grid-cols-2 gap-16 items-center">
           <div className="animate-fade-in-up">
-            <div className="inline-block bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase mb-6 shadow-lg tracking-wider">Logística Refrigerada Premium</div>
-            <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight mb-6">Frescura que Viaja <br/><span className="text-blue-200">Segura y Eficiente</span></h1>
-            <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-lg">Facilitamos el transporte consolidado entre Sinaloa y Baja California Sur. Más económico que el aéreo, más rápido que el terrestre tradicional.</p>
+            <div className="inline-block bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase mb-6 shadow-lg tracking-wider">
+              Logística Refrigerada Premium
+            </div>
+            <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+              Frescura que Viaja <br/><span className="text-blue-200">Segura y Eficiente</span>
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-lg">
+              Facilitamos el transporte consolidado entre Sinaloa y Baja California Sur. Más económico que el aéreo, más rápido que el terrestre tradicional.
+            </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <a href="#cotizador" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg font-bold shadow-xl transition transform hover:-translate-y-1 text-center">Cotizar Envío Ahora</a>
-              <button onClick={() => document.getElementById('rutas').scrollIntoView({behavior: 'smooth'})} className="bg-white/10 backdrop-blur border border-white text-white px-8 py-4 rounded-lg font-bold hover:bg-white hover:text-blue-900 transition flex items-center justify-center">
-                <Map className="w-5 h-5 mr-2" /> Ver Cobertura
+              <a href="#cotizador" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg font-bold shadow-xl transition transform hover:-translate-y-1 text-center">
+                Cotizar Envío Ahora
+              </a>
+              <button 
+                onClick={() => document.getElementById('rutas').scrollIntoView({behavior: 'smooth'})}
+                className="bg-white/10 backdrop-blur border border-white text-white px-8 py-4 rounded-lg font-bold hover:bg-white hover:text-blue-900 transition flex items-center justify-center"
+              >
+                <Map className="w-5 h-5 mr-2" />
+                Ver Cobertura
               </button>
             </div>
           </div>
+          
+          {/* Feature Cards */}
           <div className="hidden lg:grid grid-cols-2 gap-6">
              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 hover:bg-white/20 transition duration-300 h-40 flex flex-col justify-center">
                 <Thermometer className="w-8 h-8 text-cyan-300 mb-2" />
@@ -382,7 +304,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* Propósito / Nosotros (CORREGIDO: SIN FONDO GRIS) */}
+      {/* Propósito / Nosotros */}
       <section id="nosotros" className="py-20 bg-white scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -397,13 +319,11 @@ const App = () => {
               </p>
             </div>
             
-            {/* CORRECCIÓN AQUI: Eliminado el div con bg-blue-900/20 y fondo limpio */}
             <div className="relative h-96 flex items-center justify-center"> 
               <img 
                 src="img_cargo_fresh_truck.png" 
                 alt="Camión Cargo Fresh" 
                 className="w-full h-full object-contain drop-shadow-2xl" 
-                // object-contain para que no se recorte, drop-shadow para que resalte en blanco
               />
             </div>
           </div>
@@ -421,7 +341,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* Cómo Funciona (Timeline) */}
+      {/* Cómo Funciona */}
       <section id="proceso" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -456,7 +376,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* Tipos de Carga (Servicios) */}
+      {/* Tipos de Carga */}
       <section id="servicios" className="py-24 relative overflow-hidden bg-gray-900 text-white">
         <div className="absolute inset-0 z-0 bg-cover bg-center opacity-40 mix-blend-multiply" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1595155152862-2374e2a142c9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')" }}></div>
         <div className="absolute inset-0 bg-blue-950/80 z-0"></div>
@@ -580,6 +500,7 @@ const App = () => {
               <span className="text-orange-600 font-bold uppercase text-xs tracking-wider mb-2 block">Calculadora de Tarifas</span>
               <h2 className="text-3xl font-bold text-blue-900 mb-4">Cotiza tu Envío Rápido</h2>
               <p className="text-gray-600 mb-6">Obtén un estimado inmediato. Para formalizar la orden y asegurar el espacio, deberás iniciar sesión.</p>
+              
               <form className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -684,9 +605,9 @@ const App = () => {
       </footer>
     </div>
   );
+};
 
-  // 2. LOGIN PAGE (GATEWAY)
-  const LoginView = () => (
+const LoginView = ({ setCurrentView, pendingQuote, handleLogin }) => (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 relative overflow-hidden animate-fade-in-up">
         {pendingQuote && (
@@ -701,34 +622,29 @@ const App = () => {
           <h2 className="text-2xl font-bold text-gray-800">Bienvenido de nuevo</h2>
           <p className="text-gray-500 text-sm mt-2">Gestiona tus pedidos y rastrea tu carga.</p>
         </div>
-
         <div className="space-y-4">
           <button onClick={() => handleLogin('client')} className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-4 rounded-lg shadow-lg flex items-center justify-center transition transform hover:scale-[1.02]">
             <User className="w-5 h-5 mr-3"/> Soy Cliente
           </button>
-          
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-gray-200"></div>
             <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold">ACCESO INTERNO</span>
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
-
           <button onClick={() => handleLogin('admin')} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-lg shadow flex items-center justify-center border border-gray-700 transition">
             <ShieldCheck className="w-5 h-5 mr-3"/> Soy Administrador
           </button>
         </div>
-        
         <div className="mt-8 text-center">
-          <button onClick={() => { setCurrentView('landing'); setPendingQuote(null); }} className="text-sm text-gray-500 hover:text-blue-900 underline font-medium">
+          <button onClick={() => setCurrentView('landing')} className="text-sm text-gray-500 hover:text-blue-900 underline font-medium">
             ← Regresar a la página principal
           </button>
         </div>
       </div>
     </div>
-  );
+);
 
-  // 3. CLIENT DASHBOARD
-  const ClientDashboard = () => (
+const ClientDashboard = ({ user, handleLogout, pendingQuote, handleCreateOrder, setPendingQuote, orders }) => (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
@@ -745,15 +661,12 @@ const App = () => {
           </div>
         </div>
       </header>
-
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
         {pendingQuote && (
           <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center animate-fade-in-down shadow-sm">
             <div className="mb-4 md:mb-0">
               <h3 className="font-bold text-orange-800 flex items-center text-lg"><AlertCircle className="w-5 h-5 mr-2"/> Finalizar Orden Pendiente</h3>
-              <p className="text-sm text-orange-700 mt-1">
-                {pendingQuote.origin} ➝ {pendingQuote.destination} • {pendingQuote.weight}kg {pendingQuote.type}
-              </p>
+              <p className="text-sm text-orange-700 mt-1">{pendingQuote.origin} ➝ {pendingQuote.destination} • {pendingQuote.weight}kg {pendingQuote.type}</p>
               <p className="text-2xl font-black text-orange-900 mt-2">${pendingQuote.price.toLocaleString()} MXN</p>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
@@ -762,7 +675,6 @@ const App = () => {
             </div>
           </div>
         )}
-
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
             <div>
@@ -779,10 +691,9 @@ const App = () => {
             <Clock className="w-10 h-10 text-orange-100"/>
           </div>
         </div>
-
         <h2 className="text-xl font-bold text-gray-800 mb-4">Historial de Pedidos</h2>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
                 <tr>
@@ -801,11 +712,7 @@ const App = () => {
                     <td className="p-4">{order.weight}kg <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1 text-gray-600">{order.type}</span></td>
                     <td className="p-4 font-medium">${order.price.toLocaleString()}</td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        order.status === 'Autorizado' ? 'bg-green-100 text-green-700 border-green-200' :
-                        order.status === 'Pendiente de Autorización' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        'bg-blue-100 text-blue-700 border-blue-200'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${order.status === 'Autorizado' ? 'bg-green-100 text-green-700 border-green-200' : order.status === 'Pendiente de Autorización' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
                         {order.status}
                       </span>
                     </td>
@@ -813,14 +720,13 @@ const App = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
         </div>
       </main>
     </div>
-  );
+);
 
-  // 4. ADMIN DASHBOARD
-  const AdminDashboard = () => (
+const AdminDashboard = ({ handleLogout, orders, handleAuthorizeOrder }) => (
     <div className="min-h-screen bg-gray-900 flex flex-col text-gray-100">
       <header className="bg-gray-800 shadow-lg sticky top-0 z-30 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
@@ -833,7 +739,6 @@ const App = () => {
           </button>
         </div>
       </header>
-
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
         <div className="flex justify-between items-end mb-8">
           <div>
@@ -841,9 +746,8 @@ const App = () => {
             <p className="text-gray-400 mt-1">Visualiza y autoriza las órdenes entrantes.</p>
           </div>
         </div>
-
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
-          <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-sm">
             <thead className="bg-gray-900 text-gray-400 border-b border-gray-700 uppercase text-xs font-bold tracking-wider">
               <tr>
                 <th className="p-5">ID</th>
@@ -869,41 +773,153 @@ const App = () => {
                   </td>
                   <td className="p-5 text-right font-mono text-green-300 font-bold">${order.price.toLocaleString()}</td>
                   <td className="p-5">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      order.status === 'Pendiente de Autorización' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'Pendiente de Autorización' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
                       {order.status}
                     </span>
                   </td>
                   <td className="p-5 text-center">
                     {order.status === 'Pendiente de Autorización' ? (
-                      <button 
-                        onClick={() => handleAuthorizeOrder(order.id)}
-                        className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center mx-auto transition shadow-lg transform hover:scale-105"
-                      >
+                      <button onClick={() => handleAuthorizeOrder(order.id)} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center mx-auto transition shadow-lg transform hover:scale-105">
                         <Check className="w-3 h-3 mr-1" /> Autorizar
                       </button>
                     ) : (
-                      <span className="text-gray-500 text-xs flex justify-center items-center">
-                        <ClipboardCheck className="w-4 h-4 mr-1"/> Procesado
-                      </span>
+                      <span className="text-gray-500 text-xs flex justify-center items-center"><ClipboardCheck className="w-4 h-4 mr-1"/> Procesado</span>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
         </div>
       </main>
     </div>
-  );
+);
+
+/* ------------------------------------------------
+  COMPONENTE APP PRINCIPAL
+  ------------------------------------------------
+*/
+const App = () => {
+  // --- STATE ---
+  const [currentView, setCurrentView] = useState('landing'); 
+  const [user, setUser] = useState(null);
+  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [pendingQuote, setPendingQuote] = useState(null);
+  const [formData, setFormData] = useState({ origin: "", destination: "", type: "", presentation: "", weight: "", lastMile: false });
+  const [estimatedPrice, setEstimatedPrice] = useState(null);
+
+  const handleLogin = (role) => {
+    if (role === 'client') {
+      setUser({ name: "Cliente Demo S.A.", role: 'client' });
+      setCurrentView('client-dashboard');
+    } else {
+      setUser({ name: "Administrador CargoFresh", role: 'admin' });
+      setCurrentView('admin-dashboard');
+    }
+    window.scrollTo(0,0);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentView('landing');
+    setPendingQuote(null);
+    window.scrollTo(0,0);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    if (['type', 'origin', 'destination', 'lastMile'].includes(name)) {
+      setEstimatedPrice(null);
+    }
+  };
+
+  const calculateEstimate = (e) => {
+    e?.preventDefault();
+    if (!formData.weight || !formData.type) {
+      alert("Ingresa peso y tipo de carga.");
+      return;
+    }
+    const cleanWeight = formData.weight.toString().replace(',', '.');
+    const weight = parseFloat(cleanWeight);
+    if (isNaN(weight) || weight <= 0) {
+        alert("Por favor ingresa un peso válido (mayor a 0).");
+        return;
+    }
+    let total = TARIFF_RATES.baseCost + (weight * TARIFF_RATES.perKg);
+    if (formData.type === 'Congelado') total *= TARIFF_RATES.frozenMultiplier;
+    if (formData.type === 'Fresco') total *= TARIFF_RATES.freshMultiplier;
+    if (formData.lastMile) total += TARIFF_RATES.lastMileCost;
+    const min = Math.round(total * 0.95);
+    const max = Math.round(total * 1.05);
+    setEstimatedPrice({ min, max });
+  };
+
+  const handleBuyNow = () => {
+    calculateEstimate();
+    if (estimatedPrice) {
+        setPendingQuote({ ...formData, price: estimatedPrice.min });
+        setCurrentView('login');
+        window.scrollTo(0,0);
+    }
+  };
+  
+  const handleCreateOrder = () => {
+    const newOrder = {
+      id: `ORD-${Math.floor(Math.random() * 10000)}`,
+      client: user.name,
+      origin: pendingQuote ? pendingQuote.origin : formData.origin,
+      dest: pendingQuote ? pendingQuote.destination : formData.destination,
+      type: pendingQuote ? pendingQuote.type : formData.type,
+      weight: pendingQuote ? pendingQuote.weight : formData.weight,
+      price: pendingQuote ? pendingQuote.price : estimatedPrice?.min || 0,
+      status: "Pendiente de Autorización",
+      date: new Date().toISOString().split('T')[0]
+    };
+    setOrders([newOrder, ...orders]);
+    setPendingQuote(null);
+    alert("¡Pedido creado exitosamente!");
+  };
+
+  const handleAuthorizeOrder = (orderId) => {
+    setOrders(orders.map(order => order.id === orderId ? { ...order, status: "Autorizado" } : order));
+  };
 
   return (
     <>
-      {currentView === 'landing' && <LandingView />}
-      {currentView === 'login' && <LoginView />}
-      {currentView === 'client-dashboard' && <ClientDashboard />}
-      {currentView === 'admin-dashboard' && <AdminDashboard />}
+      {currentView === 'landing' && 
+        <LandingView 
+            setCurrentView={setCurrentView} 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+            calculateEstimate={calculateEstimate} 
+            handleBuyNow={handleBuyNow} 
+            estimatedPrice={estimatedPrice} 
+        />}
+      {currentView === 'login' && 
+        <LoginView 
+            setCurrentView={setCurrentView} 
+            pendingQuote={pendingQuote} 
+            handleLogin={handleLogin} 
+        />}
+      {currentView === 'client-dashboard' && 
+        <ClientDashboard 
+            user={user} 
+            handleLogout={handleLogout} 
+            pendingQuote={pendingQuote} 
+            handleCreateOrder={handleCreateOrder} 
+            setPendingQuote={setPendingQuote} 
+            orders={orders} 
+        />}
+      {currentView === 'admin-dashboard' && 
+        <AdminDashboard 
+            handleLogout={handleLogout} 
+            orders={orders} 
+            handleAuthorizeOrder={handleAuthorizeOrder} 
+        />}
       <CargoBot />
     </>
   );
