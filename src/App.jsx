@@ -5,32 +5,13 @@ import {
   Calculator, DollarSign, Leaf, Users, ChevronDown, ChevronUp,
   Sparkles, Bot, Loader2, ArrowUp, Search, Map, Info, ArrowLeft,
   User, LogIn, LogOut, LayoutDashboard, FileText, Ship, MessageSquare, Send, 
-  ClipboardCheck, AlertCircle, Check, Droplet, Snowflake, Box, ExternalLink
+  ClipboardCheck, AlertCircle, Check, Droplet, Snowflake, Box, ExternalLink,
+  Laptop, Lock
 } from 'lucide-react';
 
-/* LOGO URL CORREGIDO
-   Usamos una ruta relativa simple "./cargofreshlogo.svg".
-   Asegúrate de que el archivo "cargofreshlogo.svg" esté en la carpeta "public" de tu proyecto.
-   Al construir para producción, Vite resolverá esto correctamente relativo a la base.
-*/
-const LOGO_URL = "./cargofreshlogo.svg";
-
-/* ⚡ CONFIGURACIÓN DE TARIFAS */
-const TARIFF_RATES = {
-  baseCost: 800,
-  perKg: 12,
-  frozenMultiplier: 1.25,
-  freshMultiplier: 1.10,
-  dryMultiplier: 1.0,
-  lastMileCost: 450,
-  frequentClientDiscount: 0.15
-};
-
-/* 🧠 MOCK DATABASE */
-const INITIAL_ORDERS = [
-  { id: "ORD-001", client: "Pesquera del Mar", origin: "Mazatlán", dest: "La Paz", type: "Congelado", weight: 500, price: 6800, status: "Autorizado", date: "2024-05-10" },
-  { id: "ORD-002", client: "Agro Sur", origin: "La Paz", dest: "Los Cabos", type: "Fresco", weight: 200, price: 3200, status: "En Ruta", date: "2024-05-11" },
-];
+/* LOGO URL */
+// Usamos ruta relativa "./" para compatibilidad con GitHub Pages
+const LOGO_URL = "./cargofreshlogo.svg"; 
 
 /* GEMINI API UTILITIES */
 const apiKey = ""; 
@@ -55,7 +36,7 @@ const generateGeminiContent = async (prompt) => {
 };
 
 /* ------------------------------------------------
-  COMPONENTE CARGOBOT (AISLADO)
+  COMPONENTE CARGOBOT
   ------------------------------------------------
 */
 const CargoBot = memo(() => {
@@ -82,7 +63,7 @@ const CargoBot = memo(() => {
     setInput("");
     setIsLoading(true);
 
-    const prompt = `Eres CargoBot, asistente de Cargo Fresh. Responde breve en español. Usuario: ${userMsg}`;
+    const prompt = `Eres CargoBot, asistente de Cargo Fresh. Responde breve en español. El usuario no puede cotizar en la web, debe contactar por teléfono o correo. Usuario: ${userMsg}`;
     const responseText = await generateGeminiContent(prompt);
     
     if (responseText) {
@@ -139,17 +120,31 @@ const CargoBot = memo(() => {
 });
 
 const ContactForm = () => {
+    const [formData, setFormData] = useState({ name: "", email: "", message: "" });
     const [status, setStatus] = useState("idle");
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setStatus("sending");
+        
+        // Simulación de envío y apertura de cliente de correo
         setTimeout(() => {
+            const subject = encodeURIComponent(`Nuevo Mensaje de Contacto Web: ${formData.name}`);
+            const body = encodeURIComponent(`Nombre: ${formData.name}\nCorreo: ${formData.email}\n\nMensaje:\n${formData.message}`);
+            
+            // Abre el cliente de correo del usuario
+            window.location.href = `mailto:contacto@cargofresh.com.mx?subject=${subject}&body=${body}`;
+            
             setStatus("sent");
-            alert("¡Mensaje enviado correctamente! Nos pondremos en contacto contigo.");
-            e.target.reset(); 
+            alert("Se abrirá tu cliente de correo para enviar el mensaje.");
+            setFormData({ name: "", email: "", message: "" }); // Limpiar formulario
             setStatus("idle");
-        }, 1500);
+        }, 1000);
     };
 
     return (
@@ -158,15 +153,39 @@ const ContactForm = () => {
             <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
-                <input required type="text" className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tu nombre" />
+                <input 
+                    required 
+                    type="text" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Tu nombre" 
+                />
             </div>
             <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Correo</label>
-                <input required type="email" className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="tucorreo@empresa.com" />
+                <input 
+                    required 
+                    type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="tucorreo@empresa.com" 
+                />
             </div>
             <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mensaje</label>
-                <textarea required rows="4" className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="¿En qué podemos ayudarte?"></textarea>
+                <textarea 
+                    required 
+                    rows="4" 
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="¿En qué podemos ayudarte?"
+                ></textarea>
             </div>
             <button type="submit" disabled={status === "sending"} className="w-full bg-blue-900 text-white font-bold py-3 rounded-lg hover:bg-blue-800 transition flex justify-center items-center">
                 {status === "sending" ? <Loader2 className="animate-spin w-5 h-5"/> : "Enviar Mensaje"}
@@ -177,10 +196,10 @@ const ContactForm = () => {
 };
 
 /* ==============================================
-   COMPONENTES DE VISTA
+   VISTA PÚBLICA (LANDING) MODIFICADA
 ================================================ */
 
-const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEstimate, handleBuyNow, estimatedPrice }) => {
+const LandingView = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [freshnessProduct, setFreshnessProduct] = useState("");
   const [freshnessResult, setFreshnessResult] = useState(null);
@@ -205,7 +224,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
 
   return (
     <div className="min-h-screen bg-white text-gray-800 font-sans">
-      {/* Navbar */}
+      {/* Navbar Simplificada */}
       <nav className="sticky top-0 bg-white/95 backdrop-blur-sm shadow-sm z-40 border-b border-gray-100 transition-all">
         <div className="max-w-7xl mx-auto px-4 h-24 flex justify-between items-center">
           <div className="flex flex-col cursor-pointer" onClick={scrollToTop}>
@@ -220,15 +239,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
             <a href="#nosotros" className="hover:text-orange-500 transition">NOSOTROS</a>
             <a href="#servicios" className="hover:text-blue-900 transition">SERVICIOS</a>
             <a href="#rutas" className="hover:text-blue-900 transition">RUTAS</a>
-            <a href="#cotizador" className="hover:text-orange-500 transition text-blue-900">COTIZADOR</a>
             <a href="#contacto" className="hover:text-blue-900 transition">CONTACTO</a>
-            <button 
-              onClick={() => setCurrentView('login')}
-              className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-full flex items-center transition-all shadow-md transform hover:-translate-y-0.5"
-            >
-              <User className="w-4 h-4 mr-2" />
-              Zona Clientes
-            </button>
           </div>
           
           <button className="lg:hidden text-blue-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -239,18 +250,16 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
         {isMenuOpen && (
           <div className="lg:hidden bg-white border-t p-4 space-y-4 shadow-lg absolute w-full z-50">
             <a href="#nosotros" className="block text-gray-700 font-bold p-2" onClick={() => setIsMenuOpen(false)}>Nosotros</a>
-            <a href="#cotizador" className="block text-gray-700 font-bold p-2" onClick={() => setIsMenuOpen(false)}>Cotizador</a>
+            <a href="#servicios" className="block text-gray-700 font-bold p-2" onClick={() => setIsMenuOpen(false)}>Servicios</a>
             <a href="#contacto" className="block text-gray-700 font-bold p-2" onClick={() => setIsMenuOpen(false)}>Contacto</a>
-            <button onClick={() => setCurrentView('login')} className="w-full bg-blue-900 text-white py-3 rounded font-bold">Acceso Clientes</button>
           </div>
         )}
       </nav>
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 bg-blue-900 text-white overflow-hidden">
-        {/* Background Image with Multiply Effect */}
+        {/* Background Image */}
         <div className="absolute inset-0 z-0">
-           {/* Ruta directa para evitar problemas en deploy, si img_cargo_slide.jpg está en public */}
            <img 
              src="./img_cargo_slide.jpg"
              alt="Buque de carga"
@@ -271,9 +280,6 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
               Facilitamos el transporte consolidado entre Sinaloa y Baja California Sur. Más económico que el aéreo, más rápido que el terrestre tradicional.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <a href="#cotizador" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg font-bold shadow-xl transition transform hover:-translate-y-1 text-center">
-                Cotizar Envío Ahora
-              </a>
               <button 
                 onClick={() => document.getElementById('rutas').scrollIntoView({behavior: 'smooth'})}
                 className="bg-white/10 backdrop-blur border border-white text-white px-8 py-4 rounded-lg font-bold hover:bg-white hover:text-blue-900 transition flex items-center justify-center"
@@ -496,59 +502,61 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
         </div>
       </section>
 
-      {/* COTIZADOR PÚBLICO */}
-      <section id="cotizador" className="py-20 bg-white scroll-mt-20">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-200 flex flex-col md:flex-row gap-12 items-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200 rounded-full blur-3xl opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
+      {/* PLATAFORMA - PRÓXIMAMENTE (Reemplaza Cotizador) */}
+      <section id="plataforma" className="py-24 bg-white scroll-mt-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-gradient-to-br from-blue-900 to-indigo-900 rounded-3xl p-8 md:p-16 shadow-2xl border border-blue-800 text-white relative overflow-hidden flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
+            
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
             <div className="flex-1 relative z-10">
-              <span className="text-orange-600 font-bold uppercase text-xs tracking-wider mb-2 block">Calculadora de Tarifas</span>
-              <h2 className="text-3xl font-bold text-blue-900 mb-4">Cotiza tu Envío Rápido</h2>
-              <p className="text-gray-600 mb-6">Obtén un estimado inmediato. Para formalizar la orden y asegurar el espacio, deberás iniciar sesión.</p>
+              <div className="inline-flex items-center bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase mb-6 shadow-lg tracking-wider">
+                <Clock className="w-3 h-3 mr-1" /> Próximamente
+              </div>
+              <h2 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">
+                Plataforma Integral de <span className="text-orange-400">Logística Inteligente</span>
+              </h2>
+              <p className="text-blue-100 text-lg mb-8 leading-relaxed">
+                Estamos desarrollando un portal exclusivo para nuestros clientes. Muy pronto podrás cotizar al instante, programar recolecciones y verificar el estatus de tus envíos en tiempo real, todo desde un solo lugar.
+              </p>
               
-              <form className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Origen</label>
-                    <select name="origin" value={formData.origin} onChange={handleInputChange} className="w-full border rounded p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none block"><option value="">Sel...</option><option value="Mazatlán">Mazatlán</option><option value="La Paz">La Paz</option></select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Destino</label>
-                    <select name="destination" value={formData.destination} onChange={handleInputChange} className="w-full border rounded p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none block"><option value="">Sel...</option><option value="La Paz">La Paz</option><option value="Los Cabos">Los Cabos</option></select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Tipo de Carga</label>
-                      <select name="type" value={formData.type} onChange={handleInputChange} className="w-full border rounded p-3 bg-white outline-none focus:ring-2 focus:ring-blue-500 block"><option value="">Tipo...</option><option value="Fresco">Fresco</option><option value="Congelado">Congelado</option><option value="Seco">Seco</option></select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Peso (Kg)</label>
-                      <input type="text" inputMode="decimal" placeholder="Ej. 150.5" name="weight" value={formData.weight} onChange={handleInputChange} className="w-full border rounded p-3 outline-none focus:ring-2 focus:ring-blue-500 block" />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <div className="flex items-center bg-white/10 px-4 py-3 rounded-lg border border-white/20">
+                    <Laptop className="w-6 h-6 text-cyan-400 mr-3" />
+                    <div className="text-left">
+                        <span className="block font-bold text-sm">Cotizador Web</span>
+                        <span className="text-xs text-blue-200">Precios al instante</span>
                     </div>
                 </div>
-                <button onClick={calculateEstimate} className="w-full bg-blue-100 text-blue-900 font-bold py-3 rounded hover:bg-blue-200 transition">Calcular Estimado</button>
-              </form>
+                <div className="flex items-center bg-white/10 px-4 py-3 rounded-lg border border-white/20">
+                    <Search className="w-6 h-6 text-orange-400 mr-3" />
+                    <div className="text-left">
+                        <span className="block font-bold text-sm">Rastreo GPS</span>
+                        <span className="text-xs text-blue-200">Ubicación real</span>
+                    </div>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 bg-white p-8 rounded-2xl shadow-xl border-t-4 border-orange-500 w-full text-center relative z-10">
-              {estimatedPrice ? (
-                <>
-                  <p className="text-gray-500 uppercase text-xs font-bold mb-2">Inversión Estimada</p>
-                  <p className="text-4xl font-black text-blue-900 mb-2">${estimatedPrice.min.toLocaleString()}</p>
-                  <p className="text-sm text-gray-400 mb-6">MXN + IVA</p>
-                  <button onClick={handleBuyNow} className="w-full bg-orange-500 text-white py-4 rounded-lg font-bold hover:bg-orange-600 shadow-lg animate-pulse transition">
-                    CONTRATAR / RESERVAR
-                  </button>
-                  <p className="text-xs text-gray-400 mt-4 flex items-center justify-center">
-                    <User className="w-3 h-3 mr-1"/> Se requiere inicio de sesión
-                  </p>
-                </>
-              ) : (
-                <div className="text-gray-400 py-8 flex flex-col items-center justify-center h-full">
-                  <Calculator className="w-16 h-16 mb-4 opacity-10"/>
-                  <p className="text-lg font-medium">Ingresa tus datos para ver precios al instante.</p>
+
+            <div className="flex-1 relative z-10 flex justify-center">
+                <div className="relative">
+                    <div className="absolute -inset-4 bg-orange-500/30 rounded-full blur-xl animate-pulse"></div>
+                    <div className="bg-white/10 backdrop-blur-xl p-8 rounded-2xl border border-white/20 shadow-2xl max-w-sm">
+                        <div className="flex items-center justify-center mb-6">
+                             <div className="bg-blue-800 p-4 rounded-full">
+                                <Lock className="w-12 h-12 text-white" />
+                             </div>
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">Zona de Clientes</h3>
+                        <p className="text-sm text-blue-200 mb-6">Acceso seguro y personalizado para gestionar toda tu operación logística.</p>
+                        <div className="w-full h-2 bg-blue-950 rounded-full overflow-hidden">
+                            <div className="h-full bg-orange-500 w-3/4 rounded-full animate-[width_2s_ease-in-out_infinite]"></div>
+                        </div>
+                        <p className="text-xs text-center text-orange-400 mt-2 font-mono">EN DESARROLLO...</p>
+                    </div>
                 </div>
-              )}
             </div>
           </div>
         </div>
@@ -601,7 +609,7 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
           <div className="flex space-x-6 text-sm text-blue-300">
             <a href="#" className="hover:text-white transition">Aviso de Privacidad</a>
             <a href="#" className="hover:text-white transition">Términos y Condiciones</a>
-            <button onClick={() => setCurrentView('login')} className="hover:text-white transition underline">Acceso Administrativo</button>
+            <span className="text-gray-500 cursor-not-allowed">Acceso Administrativo</span>
           </div>
         </div>
         <div className="text-center text-xs text-blue-500 mt-8">
@@ -612,319 +620,15 @@ const LandingView = ({ setCurrentView, formData, handleInputChange, calculateEst
   );
 };
 
-const LoginView = ({ setCurrentView, pendingQuote, handleLogin }) => (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 relative overflow-hidden animate-fade-in-up">
-        {pendingQuote && (
-          <div className="bg-orange-100 text-orange-800 text-xs font-bold p-2 text-center absolute top-0 left-0 w-full flex items-center justify-center">
-            <AlertCircle className="w-3 h-3 mr-1"/> ¡Tienes una cotización pendiente!
-          </div>
-        )}
-        <div className="text-center mb-8 mt-6">
-          <div className="inline-block p-4 bg-blue-50 rounded-full mb-4">
-            <User className="w-8 h-8 text-blue-900" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800">Bienvenido de nuevo</h2>
-          <p className="text-gray-500 text-sm mt-2">Gestiona tus pedidos y rastrea tu carga.</p>
-        </div>
-        <div className="space-y-4">
-          <button onClick={() => handleLogin('client')} className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold py-4 rounded-lg shadow-lg flex items-center justify-center transition transform hover:scale-[1.02]">
-            <User className="w-5 h-5 mr-3"/> Soy Cliente
-          </button>
-          <div className="relative flex py-4 items-center">
-            <div className="flex-grow border-t border-gray-200"></div>
-            <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold">ACCESO INTERNO</span>
-            <div className="flex-grow border-t border-gray-200"></div>
-          </div>
-          <button onClick={() => handleLogin('admin')} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-lg shadow flex items-center justify-center border border-gray-700 transition">
-            <ShieldCheck className="w-5 h-5 mr-3"/> Soy Administrador
-          </button>
-        </div>
-        <div className="mt-8 text-center">
-          <button onClick={() => setCurrentView('landing')} className="text-sm text-gray-500 hover:text-blue-900 underline font-medium">
-            ← Regresar a la página principal
-          </button>
-        </div>
-      </div>
-    </div>
-);
-
-const ClientDashboard = ({ user, handleLogout, pendingQuote, handleCreateOrder, setPendingQuote, orders }) => (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white shadow-sm sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-          <div className="flex items-center">
-            <LayoutDashboard className="w-6 h-6 text-orange-500 mr-2" />
-            <span className="font-bold text-gray-800 text-lg">Portal Cliente</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-               <span className="block text-sm font-bold text-blue-900">{user.name}</span>
-               <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Cliente Frecuente</span>
-            </div>
-            <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded-full text-gray-500"><LogOut className="w-5 h-5"/></button>
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
-        {pendingQuote && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center animate-fade-in-down shadow-sm">
-            <div className="mb-4 md:mb-0">
-              <h3 className="font-bold text-orange-800 flex items-center text-lg"><AlertCircle className="w-5 h-5 mr-2"/> Finalizar Orden Pendiente</h3>
-              <p className="text-sm text-orange-700 mt-1">{pendingQuote.origin} ➝ {pendingQuote.destination} • {pendingQuote.weight}kg {pendingQuote.type}</p>
-              <p className="text-2xl font-black text-orange-900 mt-2">${pendingQuote.price.toLocaleString()} MXN</p>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <button onClick={() => setPendingQuote(null)} className="px-4 py-2 text-sm text-orange-700 font-bold hover:bg-orange-100 rounded w-full md:w-auto">Descartar</button>
-              <button onClick={handleCreateOrder} className="bg-orange-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-600 shadow-lg w-full md:w-auto">Confirmar Pedido</button>
-            </div>
-          </div>
-        )}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-               <div className="text-gray-400 text-xs font-bold uppercase mb-1">Pedidos Activos</div>
-               <div className="text-3xl font-black text-blue-900">{orders.filter(o => o.status !== 'Entregado').length}</div>
-            </div>
-            <Package className="w-10 h-10 text-blue-100"/>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-            <div>
-               <div className="text-gray-400 text-xs font-bold uppercase mb-1">Por Autorizar</div>
-               <div className="text-3xl font-black text-orange-500">{orders.filter(o => o.status === 'Pendiente de Autorización').length}</div>
-            </div>
-            <Clock className="w-10 h-10 text-orange-100"/>
-          </div>
-        </div>
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Historial de Pedidos</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
-                <tr>
-                  <th className="p-4 font-bold">ID Orden</th>
-                  <th className="p-4 font-bold">Ruta</th>
-                  <th className="p-4 font-bold">Detalle</th>
-                  <th className="p-4 font-bold">Total</th>
-                  <th className="p-4 font-bold">Estatus</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-blue-900">{order.id}</td>
-                    <td className="p-4">{order.origin} <span className="text-gray-400 mx-1">➝</span> {order.dest}</td>
-                    <td className="p-4">{order.weight}kg <span className="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1 text-gray-600">{order.type}</span></td>
-                    <td className="p-4 font-medium">${order.price.toLocaleString()}</td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${order.status === 'Autorizado' ? 'bg-green-100 text-green-700 border-green-200' : order.status === 'Pendiente de Autorización' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-        </div>
-      </main>
-    </div>
-);
-
-const AdminDashboard = ({ handleLogout, orders, handleAuthorizeOrder }) => (
-    <div className="min-h-screen bg-gray-900 flex flex-col text-gray-100">
-      <header className="bg-gray-800 shadow-lg sticky top-0 z-30 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-          <div className="flex items-center">
-            <ShieldCheck className="w-6 h-6 text-green-400 mr-2" />
-            <span className="font-bold text-white tracking-wide">Panel Administrativo</span>
-          </div>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-white flex items-center text-sm transition">
-            Cerrar Sesión <LogOut className="w-4 h-4 ml-2"/>
-          </button>
-        </div>
-      </header>
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-white">Gestión de Pedidos</h2>
-            <p className="text-gray-400 mt-1">Visualiza y autoriza las órdenes entrantes.</p>
-          </div>
-        </div>
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
-            <table className="w-full text-left text-sm">
-            <thead className="bg-gray-900 text-gray-400 border-b border-gray-700 uppercase text-xs font-bold tracking-wider">
-              <tr>
-                <th className="p-5">ID</th>
-                <th className="p-5">Cliente</th>
-                <th className="p-5">Detalle Carga</th>
-                <th className="p-5 text-right">Valor</th>
-                <th className="p-5">Estatus</th>
-                <th className="p-5 text-center">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-750 transition-colors">
-                  <td className="p-5 font-mono text-blue-300">{order.id}</td>
-                  <td className="p-5 font-bold text-white">{order.client}</td>
-                  <td className="p-5 text-gray-300">
-                    <div className="flex items-center gap-2 mb-1">
-                       <span>{order.origin}</span>
-                       <ArrowRight className="w-3 h-3 text-gray-500"/>
-                       <span>{order.dest}</span>
-                    </div>
-                    <div className="text-xs opacity-60 bg-gray-700 inline-block px-2 py-0.5 rounded">{order.weight}kg • {order.type}</div>
-                  </td>
-                  <td className="p-5 text-right font-mono text-green-300 font-bold">${order.price.toLocaleString()}</td>
-                  <td className="p-5">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${order.status === 'Pendiente de Autorización' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="p-5 text-center">
-                    {order.status === 'Pendiente de Autorización' ? (
-                      <button onClick={() => handleAuthorizeOrder(order.id)} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center mx-auto transition shadow-lg transform hover:scale-105">
-                        <Check className="w-3 h-3 mr-1" /> Autorizar
-                      </button>
-                    ) : (
-                      <span className="text-gray-500 text-xs flex justify-center items-center"><ClipboardCheck className="w-4 h-4 mr-1"/> Procesado</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
-        </div>
-      </main>
-    </div>
-);
-
 /* ------------------------------------------------
-  COMPONENTE APP PRINCIPAL
+  COMPONENTE PRINCIPAL QUE SOLO RENDERIZA LA LANDING
+  (Mantenemos estructura simple para esta versión)
   ------------------------------------------------
 */
 const App = () => {
-  // --- STATE ---
-  const [currentView, setCurrentView] = useState('landing'); 
-  const [user, setUser] = useState(null);
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
-  const [pendingQuote, setPendingQuote] = useState(null);
-  const [formData, setFormData] = useState({ origin: "", destination: "", type: "", presentation: "", weight: "", lastMile: false });
-  const [estimatedPrice, setEstimatedPrice] = useState(null);
-
-  const handleLogin = (role) => {
-    if (role === 'client') {
-      setUser({ name: "Cliente Demo S.A.", role: 'client' });
-      setCurrentView('client-dashboard');
-    } else {
-      setUser({ name: "Administrador CargoFresh", role: 'admin' });
-      setCurrentView('admin-dashboard');
-    }
-    window.scrollTo(0,0);
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setCurrentView('landing');
-    setPendingQuote(null);
-    window.scrollTo(0,0);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    if (['type', 'origin', 'destination', 'lastMile'].includes(name)) {
-      setEstimatedPrice(null);
-    }
-  };
-
-  const calculateEstimate = (e) => {
-    e?.preventDefault();
-    if (!formData.weight || !formData.type) {
-      alert("Ingresa peso y tipo de carga.");
-      return;
-    }
-    const cleanWeight = formData.weight.toString().replace(',', '.');
-    const weight = parseFloat(cleanWeight);
-    if (isNaN(weight) || weight <= 0) {
-        alert("Por favor ingresa un peso válido (mayor a 0).");
-        return;
-    }
-    let total = TARIFF_RATES.baseCost + (weight * TARIFF_RATES.perKg);
-    if (formData.type === 'Congelado') total *= TARIFF_RATES.frozenMultiplier;
-    if (formData.type === 'Fresco') total *= TARIFF_RATES.freshMultiplier;
-    if (formData.lastMile) total += TARIFF_RATES.lastMileCost;
-    const min = Math.round(total * 0.95);
-    const max = Math.round(total * 1.05);
-    setEstimatedPrice({ min, max });
-  };
-
-  const handleBuyNow = () => {
-    calculateEstimate();
-    if (estimatedPrice) {
-        setPendingQuote({ ...formData, price: estimatedPrice.min });
-        setCurrentView('login');
-        window.scrollTo(0,0);
-    }
-  };
-  
-  const handleCreateOrder = () => {
-    const newOrder = {
-      id: `ORD-${Math.floor(Math.random() * 10000)}`,
-      client: user.name,
-      origin: pendingQuote ? pendingQuote.origin : formData.origin,
-      dest: pendingQuote ? pendingQuote.destination : formData.destination,
-      type: pendingQuote ? pendingQuote.type : formData.type,
-      weight: pendingQuote ? pendingQuote.weight : formData.weight,
-      price: pendingQuote ? pendingQuote.price : estimatedPrice?.min || 0,
-      status: "Pendiente de Autorización",
-      date: new Date().toISOString().split('T')[0]
-    };
-    setOrders([newOrder, ...orders]);
-    setPendingQuote(null);
-    alert("¡Pedido creado exitosamente!");
-  };
-
-  const handleAuthorizeOrder = (orderId) => {
-    setOrders(orders.map(order => order.id === orderId ? { ...order, status: "Autorizado" } : order));
-  };
-
   return (
     <>
-      {currentView === 'landing' && 
-        <LandingView 
-            setCurrentView={setCurrentView} 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
-            calculateEstimate={calculateEstimate} 
-            handleBuyNow={handleBuyNow} 
-            estimatedPrice={estimatedPrice} 
-        />}
-      {currentView === 'login' && 
-        <LoginView 
-            setCurrentView={setCurrentView} 
-            pendingQuote={pendingQuote} 
-            handleLogin={handleLogin} 
-        />}
-      {currentView === 'client-dashboard' && 
-        <ClientDashboard 
-            user={user} 
-            handleLogout={handleLogout} 
-            pendingQuote={pendingQuote} 
-            handleCreateOrder={handleCreateOrder} 
-            setPendingQuote={setPendingQuote} 
-            orders={orders} 
-        />}
-      {currentView === 'admin-dashboard' && 
-        <AdminDashboard 
-            handleLogout={handleLogout} 
-            orders={orders} 
-            handleAuthorizeOrder={handleAuthorizeOrder} 
-        />}
+      <LandingView />
       <CargoBot />
     </>
   );
